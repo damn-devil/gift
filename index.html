@@ -446,10 +446,20 @@
       const scene = document.querySelector('a-scene');
       const T = AFRAME.THREE;
 
+      /* СНАЧАЛА запоминаем мировую позицию букета (пока маркер ещё видим) */
+      const modelEl = document.querySelector('[gltf-model]');
+      if (!modelEl) return;
+      const root = modelEl.object3D;
+
+      const worldPos = new T.Vector3();
+      const worldQuat = new T.Quaternion();
+      root.getWorldPosition(worldPos);
+      root.getWorldQuaternion(worldQuat);
+
       /* тёмный фон вместо камеры */
       document.body.style.background = 'radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a1a 100%)';
 
-      /* останавливаем MindAR — видео и трекинг */
+      /* потом останавливаем MindAR (маркер станет невидимым) */
       const sys = scene.systems && scene.systems['mindar-image-system'];
       if (sys) {
         if (typeof sys.stop === 'function') {
@@ -461,14 +471,6 @@
           }
         }
       }
-
-      const modelEl = document.querySelector('[gltf-model]');
-      if (!modelEl) return;
-      const root = modelEl.object3D;
-
-      /* текущая мировая позиция */
-      const worldPos = new T.Vector3();
-      root.getWorldPosition(worldPos);
 
       /* открепляем от маркера */
       const parent = root.parent;
