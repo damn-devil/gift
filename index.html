@@ -64,23 +64,6 @@
     }
     #sound-btn.muted { opacity: 0.45; }
 
-    #view-btn {
-      position: absolute;
-      top: 20px; right: 76px;
-      pointer-events: auto;
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      font-size: 16px;
-      color: #fff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.2s;
-      display: none;
-    }
-    #view-btn.show { display: flex; }
-
     #text-plaque {
       position: absolute;
       bottom: 140px;
@@ -174,7 +157,6 @@
 
   <div id="ui">
     <div id="greeting" class="glass">Наведи камеру на коробочку</div>
-    <button id="view-btn" class="glass" title="Рассмотреть букет">👁</button>
     <button id="sound-btn" class="muted glass">🔇</button>
     <div id="text-plaque" class="glass">
       Решил, что обычные цветы — это слишком скучно.<br>
@@ -260,9 +242,7 @@
         }
       }
       if (this.phase === 'floating') {
-        if (!window.__isViewMode) {
-          this.model.object3D.rotation.y += dt * 0.3;
-        }
+        this.model.object3D.rotation.y += dt * 0.3;
         this.model.object3D.position.y = 1.0 + Math.sin(this.elapsed * 0.9) * 0.04;
       }
     }
@@ -386,17 +366,13 @@
   (function () {
     const audio = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-btn');
-    const viewBtn = document.getElementById('view-btn');
     const errorMsg = document.getElementById('error-msg');
     const tapOverlay = document.getElementById('tap-overlay');
     const markerEl = document.querySelector('[mindar-image-target]');
     let isPlaying = false;
-    let isViewMode = false;
     let dragModel = null;
     let isDragging = false;
     let lastTouch = null;
-
-    window.__isViewMode = false;
 
     /* ——— звук ——— */
     soundBtn.addEventListener('click', () => {
@@ -428,78 +404,11 @@
       lastTouch = null;
     }, { passive: true });
 
-    /* ——— показываем кнопку просмотра при нахождении маркера ——— */
+    /* ——— показываем dragModel при нахождении маркера ——— */
     markerEl.addEventListener('targetFound', () => {
       document.getElementById('greeting').classList.add('hidden');
-      viewBtn.classList.add('show');
       const modelEl = document.querySelector('[gltf-model]');
       if (modelEl) dragModel = modelEl.object3D;
-    });
-
-    /* ——— кнопка "рассмотреть букет" (камера выкл) ——— */
-    viewBtn.addEventListener('click', () => {
-      if (isViewMode) return;
-      isViewMode = true;
-      window.__isViewMode = true;
-      viewBtn.style.display = 'none';
-
-      const scene = document.querySelector('a-scene');
-      const T = AFRAME.THREE;
-
-      /* СНАЧАЛА запоминаем мировую позицию букета (пока маркер ещё видим) */
-      const modelEl = document.querySelector('[gltf-model]');
-      if (!modelEl) return;
-      const root = modelEl.object3D;
-
-      const worldPos = new T.Vector3();
-      const worldQuat = new T.Quaternion();
-      root.getWorldPosition(worldPos);
-      root.getWorldQuaternion(worldQuat);
-
-      /* тёмный фон вместо камеры */
-      document.body.style.background = 'radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a1a 100%)';
-
-      /* потом останавливаем MindAR (маркер станет невидимым) */
-      const sys = scene.systems && scene.systems['mindar-image-system'];
-      if (sys) {
-        if (typeof sys.stop === 'function') {
-          sys.stop();
-        } else if (typeof sys.pause === 'function') {
-          sys.pause();
-          if (sys.video && sys.video.srcObject) {
-            sys.video.srcObject.getTracks().forEach(t => t.stop());
-          }
-        }
-      }
-
-      /* открепляем от маркера */
-      const parent = root.parent;
-      if (parent) parent.remove(root);
-
-      /* крепим к камере — букет всегда перед экраном */
-      const camera = document.querySelector('a-camera');
-      if (!camera) return;
-      const cam = camera.object3D;
-
-      const localStart = cam.worldToLocal(worldPos);
-      cam.add(root);
-      root.position.copy(localStart);
-      root.quaternion.identity();
-      root.scale.set(0.8, 0.8, 0.8);
-
-      /* анимация переезда в центр */
-      const targetPos = new T.Vector3(0, 0.15, -0.8);
-      const startPos = root.position.clone();
-      const t0 = performance.now();
-      const dur = 800;
-
-      function tickCenter() {
-        const t = Math.min((performance.now() - t0) / dur, 1);
-        const e = 1 - Math.pow(1 - t, 3);
-        root.position.lerpVectors(startPos, targetPos, e);
-        if (t < 1) requestAnimationFrame(tickCenter);
-      }
-      tickCenter();
     });
 
     /* ——— запуск AR ——— */
