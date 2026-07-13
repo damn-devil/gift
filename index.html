@@ -414,10 +414,7 @@
               filterMinCF: -1,
               filterBeta: -1
             });
-            document.querySelectorAll('[mindar-image-target]').forEach(el => {
-              const c = el.components && el.components['mindar-image-target'];
-              sys.registerAnchor(el, c ? c.data.targetIndex : 0);
-            });
+            /* mindar-image-target сам регистрируется в init(), не дублируем */
             sys.start();
             return; /* ждём arReady/arError */
           }
