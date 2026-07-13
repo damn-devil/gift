@@ -17,19 +17,25 @@
       background: #000;
       touch-action: none;
     }
-
     a-scene { display: block; width: 100%; height: 100%; }
 
-    /* ——— UI (Apple Glass) ——— */
     #ui {
       position: fixed; inset: 0;
       pointer-events: none;
       z-index: 10;
     }
 
+    /* ——— Apple Glass (общий стиль) ——— */
+    .glass {
+      background: rgba(225, 230, 250, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
     #greeting {
       position: absolute;
-      bottom: 128px;
+      bottom: 140px;
       left: 50%;
       transform: translateX(-50%);
       padding: 10px 28px;
@@ -39,63 +45,9 @@
       letter-spacing: 0.3px;
       user-select: none;
       white-space: nowrap;
-      background: rgba(225, 230, 250, 0.2);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.12);
       transition: opacity 0.5s;
     }
     #greeting.hidden { opacity: 0; }
-
-    #start-btn {
-      position: absolute;
-      bottom: 56px;
-      left: 50%;
-      transform: translateX(-50%);
-      pointer-events: auto;
-      padding: 14px 48px;
-      border-radius: 40px;
-      font-size: 17px;
-      font-weight: 600;
-      color: #fff;
-      background: rgba(225, 230, 250, 0.25);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.2);
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s, opacity 0.4s;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-    }
-    #start-btn:active { transform: translateX(-50%) scale(0.97); }
-    #start-btn.hidden { opacity: 0; pointer-events: none; }
-
-    #loading-ar {
-      position: absolute;
-      bottom: 56px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 14px 36px;
-      border-radius: 40px;
-      font-size: 15px;
-      color: #fff;
-      background: rgba(225, 230, 250, 0.2);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.12);
-      display: none;
-      align-items: center;
-      gap: 10px;
-      white-space: nowrap;
-    }
-    #loading-ar .spin {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.15);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: lspin 0.8s linear infinite;
-      flex-shrink: 0;
-    }
-    @keyframes lspin { to { transform: rotate(360deg); } }
 
     #sound-btn {
       position: absolute;
@@ -109,17 +61,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(225, 230, 250, 0.2);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.12);
       transition: background 0.2s, opacity 0.2s;
     }
     #sound-btn.muted { opacity: 0.45; }
 
     #text-plaque {
       position: absolute;
-      bottom: 128px;
+      bottom: 140px;
       left: 50%;
       transform: translateX(-50%);
       padding: 14px 24px;
@@ -133,16 +81,36 @@
       max-width: 340px;
       width: 90vw;
       user-select: none;
-      background: rgba(225, 230, 250, 0.25);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.15);
       box-shadow: 0 4px 24px rgba(0,0,0,0.2);
       opacity: 0;
       transition: opacity 0.6s;
       pointer-events: auto;
     }
     #text-plaque.show { opacity: 1; }
+
+    /* ——— tap-to-start overlay ——— */
+    #start-overlay {
+      position: fixed; inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: opacity 0.5s;
+    }
+    #start-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #start-overlay .label {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      padding: 16px 40px;
+      border-radius: 40px;
+    }
 
     #error-msg {
       position: fixed; inset: 0;
@@ -163,12 +131,14 @@
 </head>
 <body>
 
+  <div id="start-overlay">
+    <div class="label glass">Нажмите, чтобы запустить AR</div>
+  </div>
+
   <div id="ui">
-    <div id="greeting">Наведи камеру на коробочку</div>
-    <button id="start-btn">Запустить камеру</button>
-    <div id="loading-ar"><span class="spin"></span>Поиск коробки…</div>
-    <button id="sound-btn" class="muted">🔇</button>
-    <div id="text-plaque">
+    <div id="greeting" class="glass">Наведи камеру на коробочку</div>
+    <button id="sound-btn" class="muted glass">🔇</button>
+    <div id="text-plaque" class="glass">
       Решил, что обычные цветы — это слишком скучно.<br>
       Такой вариант мне кажется более крутым<br>
       чем просто цветы
@@ -181,7 +151,7 @@
     <source src="background-music.mp3" type="audio/mpeg" />
   </audio>
 
-  <!-- ========== A-Frame компоненты ========== -->
+  <!-- ========== КОМПОНЕНТЫ ========== -->
   <script>
   AFRAME.registerComponent('bouquet-controller', {
     init: function () {
@@ -220,7 +190,6 @@
         document.getElementById('greeting').classList.add('hidden');
       });
     },
-
     tick: function (time, delta) {
       if (this.phase === 'idle' || !this.model) return;
       const dt = delta / 1000;
@@ -310,7 +279,8 @@
           phase: Math.random() * Math.PI * 2,
           life: Math.random() * 4,
           maxLife: 3.5 + Math.random() * 3,
-          bsx: sp.scale.x, bsy: sp.scale.y,
+          bsx: sp.scale.x,
+          bsy: sp.scale.y,
         };
         sp.position.set(sp.userData.bx, sp.userData.startY, sp.userData.bz);
         sp.material.rotation = Math.random() * Math.PI * 2;
@@ -318,11 +288,9 @@
         this.petals.push(sp);
       }
     },
-
     tick: function (time, delta) {
       const dt = delta / 1000;
       this.elapsed += dt;
-
       this.petals.forEach((sp) => {
         const u = sp.userData;
         u.life += dt;
@@ -330,14 +298,12 @@
         sp.position.y = u.startY - Math.min(prog * 1.6, 1) * u.startY * 1.8;
         sp.position.x = u.bx + Math.sin(this.elapsed * u.swSp + u.phase) * u.swAm;
         sp.material.rotation += u.rotSp * dt * 10;
-
         const fi = Math.min(prog / 0.12, 1);
         const fo = Math.max(0, Math.min((1 - prog) / 0.12, 1));
         sp.material.opacity = Math.min(fi, fo);
         const scl = 0.85 + Math.sin(this.elapsed * 2.5 + u.phase) * 0.15;
         sp.scale.x = u.bsx * scl;
         sp.scale.y = u.bsy * scl;
-
         if (sp.position.y < -0.25 || prog >= 1) {
           const ang = Math.random() * Math.PI * 2;
           const rad = 0.15 + Math.random() * 0.65;
@@ -385,15 +351,18 @@
     </a-entity>
   </a-scene>
 
-  <!-- ========== УПРАВЛЕНИЕ ========== -->
+  <!-- ========== ЛОГИКА ========== -->
   <script>
   (function () {
-    /* —— звук —— */
     const audio = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-btn');
-    let isPlaying = false;
+    const overlay = document.getElementById('start-overlay');
+    const errorMsg = document.getElementById('error-msg');
+    const markerEl = document.querySelector('[mindar-image-target]');
 
-    function toggleSound() {
+    /* —— звук —— */
+    let isPlaying = false;
+    soundBtn.addEventListener('click', () => {
       if (isPlaying) {
         audio.pause();
         soundBtn.innerHTML = '🔇';
@@ -405,81 +374,52 @@
         }).catch(() => {});
       }
       isPlaying = !isPlaying;
-    }
-    soundBtn.addEventListener('click', toggleSound);
+    });
 
-    /* —— запуск AR —— */
-    const scene = document.querySelector('a-scene');
-    const startBtn = document.getElementById('start-btn');
-    const errorMsg = document.getElementById('error-msg');
-    const greeting = document.getElementById('greeting');
-    const loadingAr = document.getElementById('loading-ar');
-    const markerEl = document.querySelector('[mindar-image-target]');
+    /* —— запуск AR по тапу —— */
+    overlay.addEventListener('click', async function start() {
+      overlay.removeEventListener('click', start);
 
-    startBtn.addEventListener('click', async function startAR() {
-      startBtn.textContent = 'Загрузка…';
-      startBtn.disabled = true;
+      overlay.querySelector('.label').textContent = 'Загрузка…';
 
       try {
-        // Ждём загрузки сцены
+        const scene = document.querySelector('a-scene');
+
         if (!scene.hasLoaded) {
           await new Promise(r => scene.addEventListener('loaded', r, { once: true }));
         }
 
-        // Даём микротаск чтоб система инициализировалась
-        await new Promise(r => setTimeout(r, 50));
+        const comp = scene.components['mindar-image'];
+        if (!comp) throw new Error('MindAR компонент не найден');
 
-        const system = scene.systems['mindar-image-system'];
-        if (!system) throw new Error('MindAR system not found');
+        await comp.start();
 
-        // Запрашиваем камеру — браузер покажет диалог разрешения
-        await system.start();
+        overlay.classList.add('hidden');
 
-        // Скрываем кнопку, показываем поиск
-        startBtn.classList.add('hidden');
-        greeting.style.display = 'none';
-        loadingAr.style.display = 'flex';
-
+        /* greeting показываем, а скроется при targetFound */
       } catch (err) {
-        console.error('AR start error:', err);
-
-        // Если ошибка — показываем читаемое сообщение
-        const msg = err.message || '';
-        let hint = '';
-
-        if (msg.includes('NotAllowed') || msg.includes('Permission')) {
-          hint = 'Отклонили доступ к камере — разрешите в настройках браузера.';
-        } else if (msg.includes('NotFound')) {
-          hint = 'Камера не найдена на этом устройстве.';
-        } else if (msg.includes('NotReadable')) {
-          hint = 'Камера занята другим приложением.';
-        } else {
-          hint = '• файл <b>targets.mind</b> рядом с index.html?<br>' +
-                 '• сайт открыт по <b>HTTPS</b>? (на телефоне — обязательно)<br>' +
-                 '• разрешён доступ к камере?';
-        }
-
+        console.error(err);
+        overlay.classList.add('hidden');
         errorMsg.className = 'visible';
-        errorMsg.innerHTML = hint + '<br><br><a onclick="location.reload()">Попробовать снова</a>';
+        errorMsg.innerHTML =
+          'Не удалось запустить камеру.<br><br>' +
+          '• на телефоне сайт должен быть открыт по <b>HTTPS</b><br>' +
+          '• разрешите доступ к камере в настройках браузера<br>' +
+          '• файл <b>targets.mind</b> должен лежать рядом<br><br>' +
+          '<a onclick="location.reload()">Попробовать снова</a>';
       }
+    });
+
+    /* —— убираем greeting при обнаружении маркера —— */
+    markerEl.addEventListener('targetFound', () => {
+      document.getElementById('greeting').classList.add('hidden');
     });
 
     /* —— проверка targets.mind —— */
     fetch('targets.mind', { method: 'HEAD' }).catch(() => {
-      errorMsg.className = 'visible';
-      errorMsg.innerHTML =
-        'Файл <b>targets.mind</b> не найден.<br>' +
-        'Создайте на ' +
-        '<a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile" target="_blank">MindAR Compiler</a>' +
-        ' и положите рядом.<br><br>' +
-        '<a onclick="location.reload()">Повторить</a>';
+      // не фатально — покажем предупреждение
+      console.warn('targets.mind not found — create it at mindar.org/tools');
     });
-
-    /* —— убираем loading когда target найден —— */
-    markerEl.addEventListener('targetFound', () => {
-      loadingAr.style.display = 'none';
-    });
-
   })();
   </script>
 </body>
