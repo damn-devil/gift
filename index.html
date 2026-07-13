@@ -379,16 +379,27 @@
     function startMindAR() {
       return new Promise((resolve, reject) => {
         const scene = document.querySelector('a-scene');
-        let tries = 0;
 
+        /* слушаем события от MindAR */
+        const onReady = () => { cleanup(); resolve(); };
+        const onError = (e) => { cleanup(); reject(e.detail.error || e); };
+        const cleanup = () => {
+          scene.removeEventListener('arReady', onReady);
+          scene.removeEventListener('arError', onError);
+        };
+        scene.addEventListener('arReady', onReady);
+        scene.addEventListener('arError', onError);
+
+        let tries = 0;
         const poll = () => {
-          /* 1) Компонент mindar-image (нормальный путь) */
+          /* 1) Компонент mindar-image */
           const comp = scene.components && scene.components['mindar-image'];
           if (comp && comp.constructor && typeof comp.start === 'function') {
-            return comp.start().then(resolve).catch(reject);
+            comp.start();
+            return; /* ждём arReady/arError */
           }
 
-          /* 2) Система mindar-image-system напрямую (fallback, если init() упал) */
+          /* 2) Система mindar-image-system напрямую */
           const sys = scene.systems && scene.systems['mindar-image-system'];
           if (sys && sys.constructor && typeof sys.start === 'function') {
             sys.setup({
@@ -404,22 +415,22 @@
               filterBeta: -1
             });
             document.querySelectorAll('[mindar-image-target]').forEach(el => {
-              /* getAttribute для A-Frame компонента возвращает объект, не строку */
-              const comp = el.components && el.components['mindar-image-target'];
-              const idx = comp ? comp.data.targetIndex : 0;
-              sys.registerAnchor(el, idx);
+              const c = el.components && el.components['mindar-image-target'];
+              sys.registerAnchor(el, c ? c.data.targetIndex : 0);
             });
-            return sys.start().then(resolve).catch(reject);
+            sys.start();
+            return; /* ждём arReady/arError */
           }
 
-          /* 3) Всё ещё не готово — ждём */
+          /* 3) Всё ещё не готово */
           if (++tries > 60) {
+            cleanup();
             const reg = !!(AFRAME.components && AFRAME.components['mindar-image']);
             const sysReg = !!(AFRAME.systems && AFRAME.systems['mindar-image-system']);
-            const why = !reg && !sysReg
+            reject(new Error(!reg && !sysReg
               ? 'MindAR скрипт не загрузился (проверьте CDN)'
-              : 'MindAR не может инициализироваться';
-            return reject(new Error(why));
+              : 'MindAR не может инициализироваться'));
+            return;
           }
           setTimeout(poll, 100);
         };
