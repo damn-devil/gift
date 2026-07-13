@@ -64,6 +64,23 @@
     }
     #sound-btn.muted { opacity: 0.45; }
 
+    #view-btn {
+      position: absolute;
+      top: 20px; right: 76px;
+      pointer-events: auto;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+      display: none;
+    }
+    #view-btn.show { display: flex; }
+
     #text-plaque {
       position: absolute;
       bottom: 140px;
@@ -157,6 +174,7 @@
 
   <div id="ui">
     <div id="greeting" class="glass">Наведи камеру на коробочку</div>
+    <button id="view-btn" class="glass" title="Рассмотреть букет">👁</button>
     <button id="sound-btn" class="muted glass">🔇</button>
     <div id="text-plaque" class="glass">
       Решил, что обычные цветы — это слишком скучно.<br>
@@ -229,21 +247,23 @@
         const dur = 2500;
         const p = Math.min(t / dur, 1);
         const ep = 1 - Math.pow(1 - p, 3);
-        this.model.object3D.position.y = 0 + 0.2 * ep;
+        this.model.object3D.position.y = 0 + 0.25 * ep;
         const sc = easeBackOut(Math.min(p * 1.3, 1));
-        const s = 0.5 * sc;
+        const s = 0.8 * sc;
         this.model.object3D.scale.set(s, s, s);
         this.model.object3D.rotation.y = ep * Math.PI * 0.3;
         if (p >= 1) {
           this.phase = 'floating';
-          this.model.object3D.position.y = 0.2;
-          this.model.object3D.scale.set(0.5, 0.5, 0.5);
+          this.model.object3D.position.y = 0.25;
+          this.model.object3D.scale.set(0.8, 0.8, 0.8);
           this.model.object3D.rotation.y = 0;
         }
       }
       if (this.phase === 'floating') {
-        this.model.object3D.rotation.y += dt * 0.3;
-        this.model.object3D.position.y = 0.2 + Math.sin(this.elapsed * 0.9) * 0.04;
+        if (!window.__isViewMode) {
+          this.model.object3D.rotation.y += dt * 0.3;
+        }
+        this.model.object3D.position.y = 0.25 + Math.sin(this.elapsed * 0.9) * 0.04;
       }
     }
   });
@@ -366,23 +386,123 @@
   (function () {
     const audio = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-btn');
+    const viewBtn = document.getElementById('view-btn');
     const errorMsg = document.getElementById('error-msg');
     const tapOverlay = document.getElementById('tap-overlay');
     const markerEl = document.querySelector('[mindar-image-target]');
     let isPlaying = false;
+    let isViewMode = false;
+    let dragModel = null;
+    let isDragging = false;
+    let lastTouch = null;
 
+    window.__isViewMode = false;
+
+    /* ——— звук ——— */
     soundBtn.addEventListener('click', () => {
       if (isPlaying) { audio.pause(); soundBtn.innerHTML = '🔇'; soundBtn.classList.add('muted'); }
       else { audio.play().then(() => { soundBtn.innerHTML = '🔊'; soundBtn.classList.remove('muted'); }).catch(() => {}); }
       isPlaying = !isPlaying;
     });
 
-    /* ——— Запуск AR ——— */
+    /* ——— вращение пальцами ——— */
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1 && dragModel) {
+        isDragging = true;
+        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!isDragging || !lastTouch || !dragModel) return;
+      const dx = e.touches[0].clientX - lastTouch.x;
+      const dy = e.touches[0].clientY - lastTouch.y;
+      dragModel.rotation.y += dx * 0.012;
+      dragModel.rotation.x += dy * 0.006;
+      dragModel.rotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, dragModel.rotation.x));
+      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+      isDragging = false;
+      lastTouch = null;
+    }, { passive: true });
+
+    /* ——— показываем кнопку просмотра при нахождении маркера ——— */
+    markerEl.addEventListener('targetFound', () => {
+      document.getElementById('greeting').classList.add('hidden');
+      viewBtn.classList.add('show');
+      const modelEl = document.querySelector('[gltf-model]');
+      if (modelEl) dragModel = modelEl.object3D;
+    });
+
+    /* ——— кнопка "рассмотреть букет" (камера выкл) ——— */
+    viewBtn.addEventListener('click', () => {
+      if (isViewMode) return;
+      isViewMode = true;
+      window.__isViewMode = true;
+      viewBtn.style.display = 'none';
+
+      const scene = document.querySelector('a-scene');
+      const T = AFRAME.THREE;
+
+      /* останавливаем MindAR */
+      const sys = scene.systems && scene.systems['mindar-image-system'];
+      if (sys) {
+        sys.pause();
+        if (sys.video && sys.video.srcObject) {
+          sys.video.srcObject.getTracks().forEach(t => t.stop());
+        }
+      }
+
+      const modelEl = document.querySelector('[gltf-model]');
+      if (!modelEl) return;
+      const root = modelEl.object3D;
+
+      /* запоминаем мировую позицию */
+      const wp = new T.Vector3();
+      const wq = new T.Quaternion();
+      const ws = new T.Vector3();
+      root.getWorldPosition(wp);
+      root.getWorldQuaternion(wq);
+      root.getWorldScale(ws);
+
+      /* открепляем от маркера */
+      const parent = root.parent;
+      if (parent) parent.remove(root);
+
+      /* добавляем прямо на сцену */
+      scene.object3D.add(root);
+      root.position.copy(wp);
+      root.quaternion.copy(wq);
+      root.scale.copy(ws);
+
+      /* анимация — в центр экрана перед камерой */
+      const camera = document.querySelector('[camera]');
+      if (camera) {
+        const cam = camera.object3D;
+        const targetPos = new T.Vector3(0, 0.1, -0.6);
+        targetPos.applyQuaternion(cam.quaternion);
+        targetPos.add(cam.position);
+
+        const startPos = root.position.clone();
+        const t0 = performance.now();
+        const dur = 900;
+
+        function tickCenter() {
+          const t = Math.min((performance.now() - t0) / dur, 1);
+          const e = 1 - Math.pow(1 - t, 3);
+          root.position.lerpVectors(startPos, targetPos, e);
+          if (t < 1) requestAnimationFrame(tickCenter);
+        }
+        tickCenter();
+      }
+    });
+
+    /* ——— запуск AR ——— */
     tapOverlay.addEventListener('click', function startHandler() {
       tapOverlay.classList.remove('visible');
 
-      /* ШАГ 1: запрашиваем камеру напрямую (в обработчике жеста).
-         iOS требует getUserMedia в прямом потоке события. */
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then((stream) => {
           stream.getTracks().forEach(t => t.stop());
@@ -390,9 +510,6 @@
         })
         .then(() => {
           console.log('AR started OK');
-          markerEl.addEventListener('targetFound', () => {
-            document.getElementById('greeting').classList.add('hidden');
-          });
         })
         .catch((err) => {
           console.error('AR error:', err);
@@ -412,7 +529,6 @@
       return new Promise((resolve, reject) => {
         const scene = document.querySelector('a-scene');
 
-        /* слушаем события от MindAR */
         const onReady = () => { cleanup(); resolve(); };
         const onError = (e) => { cleanup(); reject(e.detail.error || e); };
         const cleanup = () => {
@@ -424,14 +540,12 @@
 
         let tries = 0;
         const poll = () => {
-          /* 1) Компонент mindar-image */
           const comp = scene.components && scene.components['mindar-image'];
           if (comp && comp.constructor && typeof comp.start === 'function') {
             comp.start();
-            return; /* ждём arReady/arError */
+            return;
           }
 
-          /* 2) Система mindar-image-system напрямую */
           const sys = scene.systems && scene.systems['mindar-image-system'];
           if (sys && sys.constructor && typeof sys.start === 'function') {
             sys.setup({
@@ -446,12 +560,10 @@
               filterMinCF: 0.5,
               filterBeta: 0.3
             });
-            /* mindar-image-target сам регистрируется в init(), не дублируем */
             sys.start();
-            return; /* ждём arReady/arError */
+            return;
           }
 
-          /* 3) Всё ещё не готово */
           if (++tries > 60) {
             cleanup();
             const reg = !!(AFRAME.components && AFRAME.components['mindar-image']);
