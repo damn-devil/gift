@@ -219,7 +219,7 @@
           this.startTime = performance.now();
           this.elapsed = 0;
 
-          modelEl.object3D.position.set(0, 0, 0);
+          modelEl.object3D.position.set(0, 0.8, 0);
           modelEl.object3D.scale.set(0.001, 0.001, 0.001);
           modelEl.object3D.rotation.set(0, 0, 0);
 
@@ -247,14 +247,14 @@
         const dur = 2500;
         const p = Math.min(t / dur, 1);
         const ep = 1 - Math.pow(1 - p, 3);
-        this.model.object3D.position.y = 0 + 0.25 * ep;
+        this.model.object3D.position.y = 0.8 + 0.2 * ep;
         const sc = easeBackOut(Math.min(p * 1.3, 1));
         const s = 0.8 * sc;
         this.model.object3D.scale.set(s, s, s);
         this.model.object3D.rotation.y = ep * Math.PI * 0.3;
         if (p >= 1) {
           this.phase = 'floating';
-          this.model.object3D.position.y = 0.25;
+          this.model.object3D.position.y = 1.0;
           this.model.object3D.scale.set(0.8, 0.8, 0.8);
           this.model.object3D.rotation.y = 0;
         }
@@ -263,7 +263,7 @@
         if (!window.__isViewMode) {
           this.model.object3D.rotation.y += dt * 0.3;
         }
-        this.model.object3D.position.y = 0.25 + Math.sin(this.elapsed * 0.9) * 0.04;
+        this.model.object3D.position.y = 1.0 + Math.sin(this.elapsed * 0.9) * 0.04;
       }
     }
   });
@@ -374,7 +374,7 @@
       falling-petals
     >
       <a-entity
-        position="0 0 0"
+        position="0 0.8 0"
         scale="0 0 0"
         gltf-model="url(rose-bouquet.glb)"
       ></a-entity>
@@ -458,45 +458,41 @@
       const modelEl = document.querySelector('[gltf-model]');
       if (!modelEl) return;
       const root = modelEl.object3D;
+      const T = AFRAME.THREE;
 
-      /* запоминаем мировую позицию */
-      const wp = new T.Vector3();
-      const wq = new T.Quaternion();
-      const ws = new T.Vector3();
-      root.getWorldPosition(wp);
-      root.getWorldQuaternion(wq);
-      root.getWorldScale(ws);
+      /* текущая мировая позиция */
+      const worldPos = new T.Vector3();
+      root.getWorldPosition(worldPos);
 
       /* открепляем от маркера */
       const parent = root.parent;
       if (parent) parent.remove(root);
 
-      /* добавляем прямо на сцену */
-      scene.object3D.add(root);
-      root.position.copy(wp);
-      root.quaternion.copy(wq);
-      root.scale.copy(ws);
-
-      /* анимация — в центр экрана перед камерой */
+      /* крепим к камере — букет всегда перед ней */
       const camera = document.querySelector('[camera]');
-      if (camera) {
-        const cam = camera.object3D;
-        const targetPos = new T.Vector3(0, 0.1, -0.6);
-        targetPos.applyQuaternion(cam.quaternion);
-        targetPos.add(cam.position);
+      if (!camera) return;
+      const cam = camera.object3D;
 
-        const startPos = root.position.clone();
-        const t0 = performance.now();
-        const dur = 900;
+      /* начальная позиция в координатах камеры */
+      const localStart = cam.worldToLocal(worldPos);
+      cam.add(root);
+      root.position.copy(localStart);
+      root.quaternion.identity();
+      root.scale.set(0.8, 0.8, 0.8);
 
-        function tickCenter() {
-          const t = Math.min((performance.now() - t0) / dur, 1);
-          const e = 1 - Math.pow(1 - t, 3);
-          root.position.lerpVectors(startPos, targetPos, e);
-          if (t < 1) requestAnimationFrame(tickCenter);
-        }
-        tickCenter();
+      /* анимация переезда в центр */
+      const targetPos = new T.Vector3(0, 0.15, -0.8);
+      const startPos = root.position.clone();
+      const t0 = performance.now();
+      const dur = 800;
+
+      function tickCenter() {
+        const t = Math.min((performance.now() - t0) / dur, 1);
+        const e = 1 - Math.pow(1 - t, 3);
+        root.position.lerpVectors(startPos, targetPos, e);
+        if (t < 1) requestAnimationFrame(tickCenter);
       }
+      tickCenter();
     });
 
     /* ——— запуск AR ——— */
