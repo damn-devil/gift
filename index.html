@@ -201,7 +201,7 @@
           this.startTime = performance.now();
           this.elapsed = 0;
 
-          modelEl.object3D.position.set(0, -0.08, 0);
+          modelEl.object3D.position.set(0, 0, 0);
           modelEl.object3D.scale.set(0.001, 0.001, 0.001);
           modelEl.object3D.rotation.set(0, 0, 0);
 
@@ -229,21 +229,21 @@
         const dur = 2500;
         const p = Math.min(t / dur, 1);
         const ep = 1 - Math.pow(1 - p, 3);
-        this.model.object3D.position.y = -0.08 + 0.23 * ep;
+        this.model.object3D.position.y = 0 + 0.2 * ep;
         const sc = easeBackOut(Math.min(p * 1.3, 1));
-        const s = 0.3 * sc;
+        const s = 0.5 * sc;
         this.model.object3D.scale.set(s, s, s);
         this.model.object3D.rotation.y = ep * Math.PI * 0.3;
         if (p >= 1) {
           this.phase = 'floating';
-          this.model.object3D.position.y = 0.15;
-          this.model.object3D.scale.set(0.3, 0.3, 0.3);
+          this.model.object3D.position.y = 0.2;
+          this.model.object3D.scale.set(0.5, 0.5, 0.5);
           this.model.object3D.rotation.y = 0;
         }
       }
       if (this.phase === 'floating') {
         this.model.object3D.rotation.y += dt * 0.3;
-        this.model.object3D.position.y = 0.15 + Math.sin(this.elapsed * 0.9) * 0.04;
+        this.model.object3D.position.y = 0.2 + Math.sin(this.elapsed * 0.9) * 0.04;
       }
     }
   });
@@ -339,7 +339,7 @@
   <!-- ========== СЦЕНА ========== -->
   <a-scene
     id="scene"
-    mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
+    mindar-image="imageTargetSrc: targets.mind; autoStart: false; filterMinCF: 0.5; filterBeta: 0.3; missTolerance: 5; warmupTolerance: 5;"
     color-space="sRGB"
     embedded
     renderer="colorManagement: true; alpha: true;"
@@ -354,7 +354,7 @@
       falling-petals
     >
       <a-entity
-        position="0 -0.08 0"
+        position="0 0 0"
         scale="0 0 0"
         gltf-model="url(rose-bouquet.glb)"
       ></a-entity>
@@ -441,10 +441,10 @@
               uiLoading: 'yes',
               uiScanning: 'yes',
               uiError: 'yes',
-              missTolerance: -1,
-              warmupTolerance: -1,
-              filterMinCF: -1,
-              filterBeta: -1
+              missTolerance: 5,
+              warmupTolerance: 5,
+              filterMinCF: 0.5,
+              filterBeta: 0.3
             });
             /* mindar-image-target сам регистрируется в init(), не дублируем */
             sys.start();
