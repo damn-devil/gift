@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>WebAR — Букет на коробке</title>
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -15,6 +15,7 @@
       overflow: hidden;
       font-family: 'Segoe UI', -apple-system, sans-serif;
       background: #000;
+      touch-action: none;
     }
 
     a-scene { display: block; width: 100%; height: 100%; }
@@ -26,26 +27,22 @@
       z-index: 10;
     }
 
-    .glass {
-      background: rgba(225, 230, 250, 0.25);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-    }
-
     #greeting {
       position: absolute;
-      bottom: 120px;
+      bottom: 128px;
       left: 50%;
       transform: translateX(-50%);
       padding: 10px 28px;
       border-radius: 30px;
-      font-size: 16px;
+      font-size: 15px;
       color: #fff;
       letter-spacing: 0.3px;
       user-select: none;
       white-space: nowrap;
+      background: rgba(225, 230, 250, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
       transition: opacity 0.5s;
     }
     #greeting.hidden { opacity: 0; }
@@ -56,7 +53,7 @@
       left: 50%;
       transform: translateX(-50%);
       pointer-events: auto;
-      padding: 14px 44px;
+      padding: 14px 48px;
       border-radius: 40px;
       font-size: 17px;
       font-weight: 600;
@@ -66,48 +63,75 @@
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255,255,255,0.2);
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: background 0.2s, transform 0.1s, opacity 0.4s;
       box-shadow: 0 4px 24px rgba(0,0,0,0.3);
     }
-    #start-btn:hover { background: rgba(255,255,255,0.2); }
     #start-btn:active { transform: translateX(-50%) scale(0.97); }
-    #start-btn.hidden { display: none; }
+    #start-btn.hidden { opacity: 0; pointer-events: none; }
+
+    #loading-ar {
+      position: absolute;
+      bottom: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 36px;
+      border-radius: 40px;
+      font-size: 15px;
+      color: #fff;
+      background: rgba(225, 230, 250, 0.2);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+    #loading-ar .spin {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: lspin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes lspin { to { transform: rotate(360deg); } }
 
     #sound-btn {
       position: absolute;
-      top: 24px; right: 24px;
+      top: 20px; right: 20px;
       pointer-events: auto;
-      width: 48px; height: 48px;
+      width: 44px; height: 44px;
       border-radius: 50%;
-      font-size: 22px;
+      font-size: 20px;
       color: #fff;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s, opacity 0.2s;
       background: rgba(225, 230, 250, 0.2);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255,255,255,0.12);
+      transition: background 0.2s, opacity 0.2s;
     }
-    #sound-btn:hover { background: rgba(255,255,255,0.18); }
-    #sound-btn.muted { opacity: 0.5; }
+    #sound-btn.muted { opacity: 0.45; }
 
     #text-plaque {
       position: absolute;
-      bottom: 120px;
+      bottom: 128px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 14px 28px;
-      border-radius: 20px;
+      padding: 14px 24px;
+      border-radius: 18px;
       color: #8B1538;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       text-align: center;
       line-height: 1.5;
-      letter-spacing: 0.3px;
-      max-width: 420px;
+      letter-spacing: 0.2px;
+      max-width: 340px;
+      width: 90vw;
       user-select: none;
       background: rgba(225, 230, 250, 0.25);
       backdrop-filter: blur(24px);
@@ -126,48 +150,21 @@
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.88);
       color: #fff;
-      font-size: 18px;
+      font-size: 16px;
       padding: 32px;
       text-align: center;
       line-height: 1.6;
     }
     #error-msg.visible { display: flex; }
     #error-msg a { color: #8ab4ff; text-decoration: underline; cursor: pointer; }
-
-    #loading-ar {
-      position: absolute;
-      bottom: 56px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 14px 44px;
-      border-radius: 40px;
-      font-size: 17px;
-      color: #fff;
-      background: rgba(225, 230, 250, 0.2);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.12);
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-    #loading-ar .spin {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(255,255,255,0.15);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: lspin 0.8s linear infinite;
-    }
-    @keyframes lspin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <!-- ——— UI ——— -->
   <div id="ui">
-    <div id="greeting" class="glass">Наведи камеру на коробочку</div>
+    <div id="greeting">Наведи камеру на коробочку</div>
     <button id="start-btn">Запустить камеру</button>
     <div id="loading-ar"><span class="spin"></span>Поиск коробки…</div>
     <button id="sound-btn" class="muted">🔇</button>
@@ -179,19 +176,17 @@
     <div id="error-msg"></div>
   </div>
 
-  <!-- ——— Аудио ——— -->
   <!-- >>> ЗАМЕНИТЕ src <<< -->
   <audio id="bg-music" loop preload="auto">
     <source src="background-music.mp3" type="audio/mpeg" />
   </audio>
 
-  <!-- ——— A-Frame компоненты (регистрируем до <a-scene>) ——— -->
+  <!-- ========== A-Frame компоненты ========== -->
   <script>
-  /* ========== BOUQUET CONTROLLER ========== */
   AFRAME.registerComponent('bouquet-controller', {
     init: function () {
       this.model = null;
-      this.phase = 'idle'; // idle | emerging | floating
+      this.phase = 'idle';
       this.startTime = 0;
       this.elapsed = 0;
       this.musicStarted = false;
@@ -204,12 +199,10 @@
         this.startTime = performance.now();
         this.elapsed = 0;
 
-        // Начальное положение — в коробке
         modelEl.object3D.position.set(0, -0.08, 0);
         modelEl.object3D.scale.set(0.001, 0.001, 0.001);
         modelEl.object3D.rotation.set(0, 0, 0);
 
-        // Запускаем музыку при первом обнаружении
         if (!this.musicStarted) {
           this.musicStarted = true;
           const audio = document.getElementById('bg-music');
@@ -220,17 +213,11 @@
           }).catch(() => {});
         }
 
-        // Показываем табличку
         setTimeout(() => {
           document.getElementById('text-plaque').classList.add('show');
         }, 1200);
 
-        // Убираем greeting
         document.getElementById('greeting').classList.add('hidden');
-      });
-
-      this.el.addEventListener('targetLost', () => {
-        // Можно скрыть или оставить — оставляем как есть
       });
     },
 
@@ -243,14 +230,12 @@
         const t = time - this.startTime;
         const dur = 2500;
         const p = Math.min(t / dur, 1);
-        const ep = 1 - Math.pow(1 - p, 3); // ease-out-cubic
-
+        const ep = 1 - Math.pow(1 - p, 3);
         this.model.object3D.position.y = -0.08 + 0.23 * ep;
 
-        const scP = easeBackOut(Math.min(p * 1.3, 1));
-        const s = 0.3 * scP;
+        const sc = easeBackOut(Math.min(p * 1.3, 1));
+        const s = 0.3 * sc;
         this.model.object3D.scale.set(s, s, s);
-
         this.model.object3D.rotation.y = ep * Math.PI * 0.3;
 
         if (p >= 1) {
@@ -274,10 +259,9 @@
     return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
   }
 
-  /* ========== FALLING PETALS ========== */
   AFRAME.registerComponent('falling-petals', {
     init: function () {
-      const THREE = AFRAME.THREE;
+      const T = AFRAME.THREE;
       this.petals = [];
       this.elapsed = 0;
 
@@ -288,26 +272,44 @@
 
       for (let i = 0; i < 25; i++) {
         const col = colors[Math.floor(Math.random() * colors.length)];
-        const tex = this.makePetalTex(col);
-        const mat = new THREE.SpriteMaterial({
-          map: tex, transparent: true, opacity: 0,
-          depthWrite: false,
+        const c = document.createElement('canvas');
+        c.width = 32; c.height = 48;
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, 32, 48);
+        const g = ctx.createRadialGradient(16, 24, 1, 16, 24, 16);
+        g.addColorStop(0, col);
+        g.addColorStop(0.7, col);
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.ellipse(16, 24, 10, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(16, 7);
+        ctx.lineTo(16, 41);
+        ctx.stroke();
+
+        const tex = new T.CanvasTexture(c);
+        const mat = new T.SpriteMaterial({
+          map: tex, transparent: true, opacity: 0, depthWrite: false,
         });
-        const sp = new THREE.Sprite(mat);
-        const bs = 0.04 + Math.random() * 0.03;
+        const sp = new T.Sprite(mat);
+        const bs = 0.04 + Math.random() * 0.025;
         sp.scale.set(bs, bs * 1.3, 1);
         const angle = Math.random() * Math.PI * 2;
-        const radius = 0.3 + Math.random() * 0.6;
+        const rad = 0.15 + Math.random() * 0.65;
         sp.userData = {
-          bx: Math.cos(angle) * radius,
-          bz: Math.sin(angle) * radius,
-          startY: 0.6 + Math.random() * 0.4,
-          swaySpeed: 0.3 + Math.random() * 0.8,
-          swayAmt: 0.01 + Math.random() * 0.02,
-          rotSpeed: (Math.random() - 0.5) * 0.1,
+          bx: Math.cos(angle) * rad,
+          bz: Math.sin(angle) * rad,
+          startY: 0.5 + Math.random() * 0.3,
+          swSp: 0.3 + Math.random() * 0.8,
+          swAm: 0.008 + Math.random() * 0.015,
+          rotSp: (Math.random() - 0.5) * 0.1,
           phase: Math.random() * Math.PI * 2,
           life: Math.random() * 4,
-          maxLife: 4 + Math.random() * 3,
+          maxLife: 3.5 + Math.random() * 3,
           bsx: sp.scale.x, bsy: sp.scale.y,
         };
         sp.position.set(sp.userData.bx, sp.userData.startY, sp.userData.bz);
@@ -315,28 +317,6 @@
         this.el.object3D.add(sp);
         this.petals.push(sp);
       }
-    },
-
-    makePetalTex: function (color) {
-      const c = document.createElement('canvas');
-      c.width = 32; c.height = 48;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 32, 48);
-      const g = ctx.createRadialGradient(16, 24, 1, 16, 24, 16);
-      g.addColorStop(0, color);
-      g.addColorStop(0.7, color);
-      g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(16, 24, 10, 18, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(16, 7);
-      ctx.lineTo(16, 41);
-      ctx.stroke();
-      return new THREE.CanvasTexture(c);
     },
 
     tick: function (time, delta) {
@@ -347,10 +327,9 @@
         const u = sp.userData;
         u.life += dt;
         const prog = u.life / u.maxLife;
-
         sp.position.y = u.startY - Math.min(prog * 1.6, 1) * u.startY * 1.8;
-        sp.position.x = u.bx + Math.sin(this.elapsed * u.swaySpeed + u.phase) * u.swayAmt;
-        sp.material.rotation += u.rotSpeed * dt * 10;
+        sp.position.x = u.bx + Math.sin(this.elapsed * u.swSp + u.phase) * u.swAm;
+        sp.material.rotation += u.rotSp * dt * 10;
 
         const fi = Math.min(prog / 0.12, 1);
         const fo = Math.max(0, Math.min((1 - prog) / 0.12, 1));
@@ -359,15 +338,15 @@
         sp.scale.x = u.bsx * scl;
         sp.scale.y = u.bsy * scl;
 
-        if (sp.position.y < -0.3 || prog >= 1) {
+        if (sp.position.y < -0.25 || prog >= 1) {
           const ang = Math.random() * Math.PI * 2;
-          const rad = 0.3 + Math.random() * 0.6;
+          const rad = 0.15 + Math.random() * 0.65;
           u.bx = Math.cos(ang) * rad;
           u.bz = Math.sin(ang) * rad;
-          u.startY = 0.6 + Math.random() * 0.3;
-          u.swaySpeed = 0.3 + Math.random() * 0.8;
-          u.swayAmt = 0.01 + Math.random() * 0.02;
-          u.rotSpeed = (Math.random() - 0.5) * 0.1;
+          u.startY = 0.5 + Math.random() * 0.3;
+          u.swSp = 0.3 + Math.random() * 0.8;
+          u.swAm = 0.008 + Math.random() * 0.015;
+          u.rotSp = (Math.random() - 0.5) * 0.1;
           u.phase = Math.random() * Math.PI * 2;
           u.life = 0;
           sp.position.set(u.bx, u.startY, u.bz);
@@ -380,7 +359,7 @@
   });
   </script>
 
-  <!-- ——— СЦЕНА A-Frame + MindAR ——— -->
+  <!-- ========== СЦЕНА ========== -->
   <a-scene
     id="scene"
     mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
@@ -406,9 +385,10 @@
     </a-entity>
   </a-scene>
 
+  <!-- ========== УПРАВЛЕНИЕ ========== -->
   <script>
   (function () {
-    /* ========== ЗВУК ========== */
+    /* —— звук —— */
     const audio = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-btn');
     let isPlaying = false;
@@ -428,45 +408,63 @@
     }
     soundBtn.addEventListener('click', toggleSound);
 
-    /* Первый клик — разблокировка аудио */
-    document.addEventListener('click', function firstTap() {
-      document.removeEventListener('click', firstTap);
-      /* не включаем автоматом — даём bouquet-controller запустить */
-    }, { once: true });
-
-    /* ========== ЗАПУСК AR ========== */
+    /* —— запуск AR —— */
     const scene = document.querySelector('a-scene');
     const startBtn = document.getElementById('start-btn');
     const errorMsg = document.getElementById('error-msg');
     const greeting = document.getElementById('greeting');
     const loadingAr = document.getElementById('loading-ar');
+    const markerEl = document.querySelector('[mindar-image-target]');
 
     startBtn.addEventListener('click', async function startAR() {
       startBtn.textContent = 'Загрузка…';
       startBtn.disabled = true;
 
       try {
+        // Ждём загрузки сцены
         if (!scene.hasLoaded) {
-          await new Promise(resolve => scene.addEventListener('loaded', resolve, { once: true }));
+          await new Promise(r => scene.addEventListener('loaded', r, { once: true }));
         }
-        await scene.systems['mindar-image-system'].setupDone;
-        await scene.systems['mindar-image-system'].start();
 
+        // Даём микротаск чтоб система инициализировалась
+        await new Promise(r => setTimeout(r, 50));
+
+        const system = scene.systems['mindar-image-system'];
+        if (!system) throw new Error('MindAR system not found');
+
+        // Запрашиваем камеру — браузер покажет диалог разрешения
+        await system.start();
+
+        // Скрываем кнопку, показываем поиск
         startBtn.classList.add('hidden');
         greeting.style.display = 'none';
         loadingAr.style.display = 'flex';
+
       } catch (err) {
-        console.error('MindAR error:', err);
+        console.error('AR start error:', err);
+
+        // Если ошибка — показываем читаемое сообщение
+        const msg = err.message || '';
+        let hint = '';
+
+        if (msg.includes('NotAllowed') || msg.includes('Permission')) {
+          hint = 'Отклонили доступ к камере — разрешите в настройках браузера.';
+        } else if (msg.includes('NotFound')) {
+          hint = 'Камера не найдена на этом устройстве.';
+        } else if (msg.includes('NotReadable')) {
+          hint = 'Камера занята другим приложением.';
+        } else {
+          hint = '• файл <b>targets.mind</b> рядом с index.html?<br>' +
+                 '• сайт открыт по <b>HTTPS</b>? (на телефоне — обязательно)<br>' +
+                 '• разрешён доступ к камере?';
+        }
+
         errorMsg.className = 'visible';
-        errorMsg.innerHTML =
-          'Не удалось запустить камеру.<br>' +
-          '• файл <b>targets.mind</b> рядом с index.html?<br>' +
-          '• сайт открыт по <b>HTTPS</b>?<br>' +
-          '• разрешён доступ к камере?<br><br>' +
-          '<a onclick="location.reload()">Попробовать снова</a>';
+        errorMsg.innerHTML = hint + '<br><br><a onclick="location.reload()">Попробовать снова</a>';
       }
     });
 
+    /* —— проверка targets.mind —— */
     fetch('targets.mind', { method: 'HEAD' }).catch(() => {
       errorMsg.className = 'visible';
       errorMsg.innerHTML =
@@ -474,13 +472,14 @@
         'Создайте на ' +
         '<a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile" target="_blank">MindAR Compiler</a>' +
         ' и положите рядом.<br><br>' +
-        '<a onclick="location.reload()">Проверить снова</a>';
+        '<a onclick="location.reload()">Повторить</a>';
     });
 
-    /* Прячем loading когда target найден */
-    document.querySelector('[mindar-image-target]').addEventListener('targetFound', () => {
+    /* —— убираем loading когда target найден —— */
+    markerEl.addEventListener('targetFound', () => {
       loadingAr.style.display = 'none';
     });
+
   })();
   </script>
 </body>
