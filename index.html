@@ -446,12 +446,19 @@
       const scene = document.querySelector('a-scene');
       const T = AFRAME.THREE;
 
-      /* останавливаем MindAR */
+      /* тёмный фон вместо камеры */
+      document.body.style.background = 'radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a1a 100%)';
+
+      /* останавливаем MindAR — видео и трекинг */
       const sys = scene.systems && scene.systems['mindar-image-system'];
       if (sys) {
-        sys.pause();
-        if (sys.video && sys.video.srcObject) {
-          sys.video.srcObject.getTracks().forEach(t => t.stop());
+        if (typeof sys.stop === 'function') {
+          sys.stop();
+        } else if (typeof sys.pause === 'function') {
+          sys.pause();
+          if (sys.video && sys.video.srcObject) {
+            sys.video.srcObject.getTracks().forEach(t => t.stop());
+          }
         }
       }
 
@@ -467,12 +474,11 @@
       const parent = root.parent;
       if (parent) parent.remove(root);
 
-      /* крепим к камере — букет всегда перед ней */
-      const camera = document.querySelector('[camera]');
+      /* крепим к камере — букет всегда перед экраном */
+      const camera = document.querySelector('a-camera');
       if (!camera) return;
       const cam = camera.object3D;
 
-      /* начальная позиция в координатах камеры */
       const localStart = cam.worldToLocal(worldPos);
       cam.add(root);
       root.position.copy(localStart);
