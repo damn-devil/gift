@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>WebAR — Букет на коробке</title>
 
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.min.js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"
+    onerror="console.error('A-Frame failed to load')"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"
+    onerror="console.error('MindAR script failed to load')"></script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -343,33 +345,36 @@
       isPlaying = !isPlaying;
     });
 
+    /* ——— Кешируем компонент при загрузке сцены ——— */
+    let mindarComp = null;
+    const scene = document.querySelector('a-scene');
+
+    scene.addEventListener('loaded', () => {
+      /* Пробуем получить компонент, ждём пока A-Frame его проинициализирует */
+      try {
+        mindarComp = scene.components['mindar-image'];
+      } catch(e) {}
+    });
+
     /* ——— Запуск AR ——— */
     tapOverlay.addEventListener('click', function startHandler() {
       tapOverlay.classList.remove('visible');
 
-      const scene = document.querySelector('a-scene');
-
-      /* ШАГ 1: запрашиваем камеру напрямую (синхронно в обработчике жеста).
+      /* ШАГ 1: запрашиваем камеру напрямую (в обработчике жеста).
          iOS требует getUserMedia в прямом потоке события. */
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then((stream) => {
-          /* Камера разрешена. Останавливаем тестовый стрим.
-             Теперь permission кэширован — MindAR сможет завести свою камеру. */
           stream.getTracks().forEach(t => t.stop());
-
-          /* ШАГ 2: ждём загрузки сцены */
-          if (!scene.hasLoaded) {
-            return new Promise(r => scene.addEventListener('loaded', r, { once: true }));
-          }
+          /* ШАГ 2: ждём компонент MindAR */
+          return waitForComponent(scene, 'mindar-image', 50, 30);
         })
-        .then(() => {
-          /* ШАГ 3: запускаем MindAR (permission уже есть) */
-          const comp = scene.components['mindar-image'];
-          if (!comp) throw new Error('mindar-image component not found');
+        .then((comp) => {
+          /* ШАГ 3: запускаем MindAR (permission уже кэширован) */
+          mindarComp = comp;
           return comp.start();
         })
         .then(() => {
-          console.log('AR started');
+          console.log('AR started OK');
           markerEl.addEventListener('targetFound', () => {
             document.getElementById('greeting').classList.add('hidden');
           });
@@ -386,6 +391,20 @@
             '<a onclick="location.reload()">Повторить</a>';
         });
     }, { once: true });
+
+    /* ——— ждёт появления компонента на сцене (polling с retry) ——— */
+    function waitForComponent(el, name, interval, maxRetries) {
+      return new Promise((resolve, reject) => {
+        let tries = 0;
+        const check = () => {
+          const c = el.components && el.components[name];
+          if (c) return resolve(c);
+          if (++tries >= maxRetries) return reject(new Error('component ' + name + ' not found'));
+          setTimeout(check, interval);
+        };
+        check();
+      });
+    }
 
   })();
   </script>
