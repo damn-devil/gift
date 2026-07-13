@@ -16,7 +16,7 @@
       width: 100%; height: 100%;
       overflow: hidden;
       font-family: 'Segoe UI', -apple-system, sans-serif;
-      background: #000;
+      background: transparent;
       touch-action: none;
     }
     a-scene { display: block; width: 100%; height: 100%; }
@@ -310,7 +310,7 @@
     mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
     color-space="sRGB"
     embedded
-    renderer="colorManagement: true;"
+    renderer="colorManagement: true; alpha: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
   >
